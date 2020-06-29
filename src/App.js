@@ -1,13 +1,13 @@
 import React from "react";
 import { Machine, assign } from "xstate";
 import { useMachine } from "@xstate/react";
-
+import { fetchMachine } from "./machine/fetch";
 const dataMachine = Machine({
   id: "signdataMachineIn",
   initial: "loading",
   context: {
     data: [],
-    flag: true
+    flag: true,
   },
   states: {
     loading: {
@@ -24,61 +24,60 @@ const dataMachine = Machine({
               }
             }, 1000);
           };
-        }
+        },
       },
       on: {
         DONE_MORE: {
           target: "more",
           actions: assign({
             data: (context, event) => [...context.data, ...event.newData],
-            flag: false
-          })
+            flag: false,
+          }),
         },
         DONE_COMPLETE: {
           target: "complete",
           actions: assign({
-            data: (context, event) => [...event.newData]
-          })
+            data: (context, event) => [...event.newData],
+          }),
         },
-        FAIL: "failure"
-      }
+        FAIL: "failure",
+      },
     },
     more: {
       on: {
-        LOAD: "loading"
-      }
+        LOAD: "loading",
+      },
     },
     complete: {
-      type: "final"
+      type: "final",
     },
     failure: {
-      type: "final"
-    }
-  }
+      type: "final",
+    },
+  },
 });
 
 function App() {
-  const [current, send] = useMachine(dataMachine);
-  const { data } = current.context;
+  const [fetchState, sendToFetchMachine] = useMachine(fetchMachine, {
+    actions: {
+      fetchData: (ctx, event) => {
+        fetch(" https://pokeapi.co/api/v2/pokemon/ditto")
+          .then((res) => {
+            sendToFetchMachine({ type: "RESOLVE", data: res });
+          })
+          .catch((e) => {
+            sendToFetchMachine({ type: "REJECT", data: e.message });
+          });
+      },
+    },
+  });
   return (
     <div className="App">
-      <ul>
-        {data.map(item => {
-          return <li key={item}>{item}</li>;
-        })}
-        {current.matches("loading") && <li>Loading...</li>}
-        {current.matches("more") && (
-          <li>
-            <button
-              onClick={() => {
-                send("LOAD");
-              }}
-            >
-              Load More
-            </button>
-          </li>
-        )}
-      </ul>
+      <button onClick={() => sendToFetchMachine({ type: "FETCH" })}>
+        send
+      </button>
+      {fetchState.matches("pending") && <div>Loading...</div>}
+      {fetchState.matches("successful") && <div>Done</div>}
     </div>
   );
 }
