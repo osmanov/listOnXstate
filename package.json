@@ -10,7 +10,7 @@
     "react": "^16.13.0",
     "react-dom": "^16.13.0",
     "react-query": "^2.4.5",
-    "react-scripts": "3.4.0",
+    "react-scripts": "5.0.1",
     "xstate": "^4.8.0"
   },
   "scripts": {
